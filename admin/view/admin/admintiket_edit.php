@@ -1,0 +1,157 @@
+<?php
+    $id_admin = enkripsiDekripsi($_GET['id'],'dekripsi');
+    $sql = "SELECT * FROM admin WHERE id_admin='$id_admin'";
+    $data_admin = $db->query($sql)->fetch_assoc();
+
+if(isset($id_admin_temp_fix)){
+  $id_anggota = enkripsiDekripsi($_GET['eid'], 'dekripsi');
+  $data_admin = mysqli_fetch_array(mysqli_query($koneksi,"SELECT * FROM anggota_sistem AS asi WHERE asi.id_anggota = '$id_anggota'"));
+
+  $data_uname = array();
+  $ambil_uname = mysqli_query($koneksi,"SELECT username_anggota FROM anggota_sistem WHERE id_anggota != '$id_anggota'");
+  while ($row_uname= mysqli_fetch_assoc($ambil_uname)){
+    $data_uname[] = $row_uname['username_anggota'];
+  }
+
+  $btnSubmit = @$_POST['btnSubmit'];
+  if ($btnSubmit) {
+    $nama_anggota = @$_POST['nama_anggota'];
+    $email_anggota = @$_POST['email_anggota'];
+    $username_anggota = @$_POST['username_anggota'];
+    $password_anggota = enkripsiDekripsi(@$_POST['password_anggota'], "enkripsi");
+
+    $insert = mysqli_query($koneksi,"UPDATE `anggota_sistem` SET 
+      `nama_anggota` = '$nama_anggota',
+      `email_anggota` = '$email_anggota',
+      `username_anggota` = '$username_anggota',
+      `password_anggota` = '$password_anggota' 
+      WHERE id_anggota = '$id_admin_temp'");
+
+    if ($insert) {
+      echo '<script type="text/javascript">
+      alert("Data berhasil diedit"); 
+      window.location.href="?page=editProfil";
+      </script>';
+    } else {
+      $iki_error = str_replace("'", "`", mysqli_error($koneksi));
+      echo '<script type="text/javascript">
+      alert("Gagal mengedit data\\n'.$iki_error.'"); 
+      </script>';
+    }
+  }
+} else {
+  // header("location:index.php");
+}
+?>
+
+<section class="content-header">
+  <div class="container-fluid">
+    <div class="row mb-2">
+      <div class="col-sm-6">
+        <h1>Edit Akun</h1>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card card-primary">
+          <!-- <div class="card-header">
+            <h3 class="card-title">Quick Example <small>jQuery Validation</small></h3>
+          </div> -->
+          <form role="form" method="post" action="view/admin/proses_data.php" enctype="multipart/form-data">
+            <div class="card-body">              
+              <input type="hidden" name="id_admin" value="<?= $_GET['id'] ?>">
+              <div class="form-group">
+                <label for="nama_anggota">Nama</label>
+                <input type="text" name="nama_anggota" class="form-control" id="nama_anggota" placeholder="Nama" maxlength="255" value="<?php echo $data_admin['nama_admin'] ?>" required>
+              </div>
+              <div class="form-group">
+                <label for="username_anggota">Username</label> <span id='messageUname'></span>
+                <input type="text" name="username_anggota" class="form-control" id="username_anggota" placeholder="Username" maxlength="100" autocomplete="off" onkeyup="cekUsername()" value="<?php echo $data_admin['username_admin'] ?>" required>
+              </div>
+              <div class="row">
+                <div class="col-sm-6">
+                  <div class="form-group">
+                    <label for="password_anggota">Password</label>
+                    <input type="password" name="password_anggota" class="form-control" id="password_anggota" placeholder="Password" maxlength="100" autocomplete="off" onkeyup="cekPass()" >
+                  </div>
+                </div>
+                <div class="col-sm-6">
+                  <div class="form-group">
+                    <label for="password_anggota_cnf">Konfirmasi Password</label> <span id='message'></span>
+                    <input type="password" name="password_anggota_cnf" class="form-control" id="password_anggota_cnf" placeholder="Konfirmasi Password" maxlength="100" autocomplete="off" onkeyup="cekPass()">
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="jabatan_admin">Jabatan</label>
+                <select name="jabatan_admin" class="form-control" id="jabatan_admin" readonly required>
+                  <option value="2" <?php if($data_admin['jabatan_admin'] == "2"){ echo "checked"; }?>>Admin Tiket</option>
+                </select>
+              </div>
+            </div>
+            <div class="card-footer">
+              <input type="submit" name="edit_admin" class="btn btn-primary" id="btnSubmit" value="Submit">
+            </div>
+          </form>
+        </div>
+      </div>
+      <div class="col-md-6">
+      </div>
+    </div>
+  </div>
+</section>
+
+<script type="text/javascript">
+
+  function cekPass(){
+      alert
+    if ($('#password_anggota').val() == $('#password_anggota_cnf').val()) {
+      $('#message').html('');
+      // document.getElementById("btnSubmit").disabled = false; 
+      cekGabungan(); 
+    } else {
+      $('#message').html('Tidak Cocok').css('color', 'red');
+      document.getElementById("btnSubmit").disabled = true; 
+    }
+  };
+  function cekGabungan(){
+    if($('#password_anggota').val() == $('#password_anggota_cnf').val()){
+      document.getElementById("btnSubmit").disabled = false;
+    }
+  }
+
+  function setInputFilter(textbox, inputFilter) {
+    ["input", "keydown", "keyup", "mousedown", "mouseup", "select", "contextmenu", "drop"].forEach(function(event) {
+      textbox.addEventListener(event, function() {
+        if (inputFilter(this.value)) {
+          this.oldValue = this.value;
+          this.oldSelectionStart = this.selectionStart;
+          this.oldSelectionEnd = this.selectionEnd;
+        } else if (this.hasOwnProperty("oldValue")) {
+          this.value = this.oldValue;
+          this.setSelectionRange(this.oldSelectionStart, this.oldSelectionEnd);
+        }
+      });
+    });
+  }
+
+  setInputFilter(document.getElementById("telepon_anggota"), function(value) {
+    return /^\d*$/.test(value);
+  });
+
+  setInputFilter(document.getElementById("username_anggota"), function(value) {
+    return /^[a-zA-Z0-9]*$/.test(value);
+  });
+
+  setInputFilter(document.getElementById("password_anggota"), function(value) {
+    return /^[a-zA-Z0-9]*$/.test(value);
+  });
+  setInputFilter(document.getElementById("password_anggota_cnf"), function(value) {
+    return /^[a-zA-Z0-9]*$/.test(value);
+  });
+</script>
